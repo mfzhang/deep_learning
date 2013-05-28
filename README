@@ -1,0 +1,51 @@
+
+_/ deeplearning実装/検証プログラム _/
+
+ Main.cpp内で各種テストを行なっています
+
+_/ 対応環境 _/
+
+makeでコンパイル可能な環境(emacs+gccだったり、eclipse CDTだったり)
+Visual Studio 2010
+
+_/ 必要な環境 _/
+
+g++
+boost
+eigen3
+
+ライブラリはパッケージで用意されたものでOK
+
+_/ 実装したもの _/
+
+neuralnet
+restricted boltzman machine
+deep belief network
+
+_/ 実装の方針 _/
+
+手法としては最もシンプルなものを採用している
+ほとんどを行列の演算として計算
+精度はfloat
+並列化などは一切おこなっていない
+
+_/ 動かし方(Linux) _/
+
+コンパイルは次の２つのどちらかのコマンド
+
+make all
+make all-release
+
+releaseがつく場合はリリースビルドで、
+デバッグ情報は付かないが最適化が働く。
+デバッグビルドの場合は計算が死ぬほど遅いの注意
+実行は
+
+./deep-learning
+
+行うテストの切り替えはMain.cppのmain関数のコメントアウトで。
+
+_/ ライブラリとしての使い方 _/
+
+Main.cppのテストコードがそのままサンプルコードです。
+適宜コメントを加えて有りますのでそちらを参考にしてください。
