@@ -76,21 +76,12 @@ AR					= ar rv
 RANLIB				= ranlib
 
 # ライブラリ情報
-# Xライブラリ
-INCLUDES	+= -I/usr/X11R6/include
-LIBS		+= -L/usr/X11R6/lib -lX11
 # boostパス指定
 INCLUDES	+=
 LIBS		+= -lboost_program_options -lboost_system -lboost_thread -lboost_date_time -lboost_filesystem -lboost_serialization
-# SDLパス指定
-INCLUDES	+= $(shell sdl-config --cflags)
-LIBS		+= $(shell sdl-config --libs)
-# ffmpeg
-INCLUDES	+= $(shell pkg-config libavcodec libavdevice libavfilter libavformat libavutil libswscale --cflags)
-LIBS		+= $(shell pkg-config libavcodec libavdevice libavfilter libavformat libavutil libswscale --libs)
-# gtkmm-3.0
-INCLUDES	+= $(shell pkg-config gtkmm-3.0 --cflags)
-LIBS		+= $(shell pkg-config gtkmm-3.0 --libs)
+# eigen
+INCLUDES	+= $(shell pkg-config eigen3 --cflags)
+LIBS		+= $(shell pkg-config eigen3 --libs)
 
 # 未指定の場合は何もしない
 .PHONY			: none
