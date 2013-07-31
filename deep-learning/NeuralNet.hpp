@@ -23,7 +23,7 @@ public:
 
 	/*! 入力信号から出力信号を得る
 	 */
-	inline const Eigen::VectorXf& GetOutput(Eigen::VectorXf vi){
+	inline const Eigen::VectorXf& GetOutput(const Eigen::VectorXf& vi){
 		_CalcOutput(vi);
 		return _L.back().z;
 	}
@@ -34,7 +34,11 @@ public:
 
 	/*! データセットからバッチ学習を行う
 	 */
-	void BatchLearn(const std::vector<PairType>& data_set);
+	float BatchLearn(const std::vector<PairType>& data_set);
+
+	/*! 指定した誤差に収束するまで学習を行う
+	 */
+	void BatchLearn(const std::vector<PairType>& data_set, float eps, int min_loop_num=1e3);
 
 	/*!
 	*/

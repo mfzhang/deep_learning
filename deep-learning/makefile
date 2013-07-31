@@ -56,14 +56,14 @@ DEPENDS		= $(patsubst %.cpp,%.d,$(SRCS))
 SUBMAKE_FLAGS		= -j --no-print-directory
 
 # C++コンパイル情報
-CXX					= g++ -MMD -MP
-CXX_DEBUG_FLAGS		= -pipe -Wall -W -O0 -g -DDEBUG
-CXX_RELEASE_FLAGS	= -O3 -pg -DRELEASE -DNDEBUG
+CXX					= g++ -MMD -MP -pipe
+CXX_DEBUG_FLAGS		= -Wall -W -O0 -g -DDEBUG
+CXX_RELEASE_FLAGS	= -O3 -march=native -DRELEASE -DNDEBUG
 
 # CUDAコンパイル情報
 NVCC				= nvcc -M
 NVCC_DEBUG_FLAGS	= -O0 -g
-NVCC_RELEASE_FLAGS	= -O2 -pg
+NVCC_RELEASE_FLAGS	= -O2
 
 # リンク情報
 LD					= g++

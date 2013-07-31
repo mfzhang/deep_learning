@@ -54,17 +54,23 @@ void dl::CNeuralNet::SeqLearn(const PairType& pair) {
 
 /*! データセットからバッチ学習を行う
  */
-void dl::CNeuralNet::BatchLearn(const std::vector<PairType>& data_set) {
+float dl::CNeuralNet::BatchLearn(const std::vector<PairType>& data_set) {
 	//重みとバイアスの更新量のカウンタを生成
 	vector<CNet> AccNet;
 	AccNet.reserve(_N.size());
 	BOOST_FOREACH(const CNet& i, _N) {
 		AccNet.push_back(i.CreateSameSizeZero());
 	}
-	//更新量の和を求める
+	//誤差のカウンタ
+	float Error=0;
+	//すべてのデータに対して処理
 	BOOST_FOREACH(const PairType& i, data_set) {
+		//すべての層の出力と誤差を計算
 		_CalcOutput(i.first);
 		_CalcError(i.second);
+		//誤差を加算
+		Error += _L.back().d.norm();
+		//更新量を加算
 		for (int j = 0; j < _N.size(); j++) {
 			AccNet[j].w += _L[j].z * _L[j + 1].d.transpose();
 			AccNet[j].b += _L[j + 1].d;
@@ -80,6 +86,25 @@ void dl::CNeuralNet::BatchLearn(const std::vector<PairType>& data_set) {
 	for (size_t i = 0; i < _N.size(); i++) {
 		_N[i].w -= AccNet[i].w;
 		_N[i].b -= AccNet[i].b;
+	}
+	//誤差を返却
+	return Error/data_set.size();
+}
+
+/*! 指定した誤差に収束するまで学習を行う
+ */
+void dl::CNeuralNet::BatchLearn(const std::vector<PairType>& data_set, float eps, int min_loop_num){
+	float LastError = numeric_limits<float>::max();
+	float TempError;
+	for(int i=0; i<min_loop_num; i++){
+		BatchLearn(data_set);
+	}
+	for(;;){
+		TempError = BatchLearn(data_set);
+		if(abs(LastError-TempError)<eps ){
+			break;
+		}
+		LastError = TempError;
 	}
 }
 

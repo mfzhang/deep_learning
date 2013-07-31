@@ -15,12 +15,12 @@ boost::uniform_01<> _Dest;
 dl::CNet::CNet(std::size_t is, std::size_t os) :
 		w(is, os), b(os) {
 	for (int i = 0; i < b.rows(); i++) {
-		b(i) = _Dest(_Gen) - 0.5;
+		b(i) = _Dest(_Gen)*2.0f - -1.0f;
 	}
 
 	for (int i = 0; i < w.rows(); i++) {
 		for (int j = 0; j < w.cols(); j++) {
-			w(i, j) = _Dest(_Gen) - 0.5;
+			w(i, j) = _Dest(_Gen)*2.0f - 1.0f;
 		}
 	}
 }

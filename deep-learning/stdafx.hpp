@@ -7,7 +7,7 @@
 
 #include <boost/random.hpp>
 #include <boost/foreach.hpp>
-
+#include <boost/timer.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/back.hpp>
 #include <boost/mpl/pop_front.hpp>

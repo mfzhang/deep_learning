@@ -9,34 +9,42 @@ using namespace std;
 using namespace Eigen;
 
 namespace {
+const float _Eps = 1.0e-6;				//収束条件
 const float _Eta = 0.2;					//学習率
-const int _ReduceStep = 2;				//１階層ごとのニューロン現象数
+const int _ReduceStep = 3;				//１階層ごとのニューロン減少数
 const int _ImgLen = 8;					//画像の一片のながさ
 const int _ImgSize = _ImgLen * _ImgLen;	//画像ベクトルの次元数
-const int _TryNum = 1e3;				//学習の試行回数
 const int _MidDepth = 16;				//階層の深さ(+1の深さのニューラルネットが完成する)
 boost::mt19937 _Gen(20130413);
 }
 
 inline float UniformSin(float x) {
-	//return x * x + 0.1 * sin(10 * M_PI * x);
-	return x * 0.5+0.5;
+	return x * x + 0.1 * sin(10 * M_PI * x);
+	//return x * 0.5+0.5;
 }
 
 void nn_func_test();
-void perc_test();
-void p_test();
 void nn_test();
 void rbm_test();
 void dbn_test();
 
 int main() {
 	//nn_func_test();
-	nn_test();
+	{
+		boost::timer Timer;
+		nn_test();
+		cerr << "total : " << Timer.elapsed() << "[sec]" << endl;
+	}
 	//rbm_test();
-	//dbn_test();
+	{
+		boost::timer Timer;
+		//dbn_test();
+		cerr << "total : " << Timer.elapsed() << "[sec]" << endl;
+	}
 }
 
+/*! 関数近似のテスト
+ */
 void nn_func_test() {
 	//データセットを生成
 	vector<dl::PairType> DataSet;
@@ -53,22 +61,27 @@ void nn_func_test() {
 
 	//ニューラルネットを生成
 	dl::CNetStack Stack;
-	Stack.Push(dl::CNet(1, 1));
+	Stack.Push(dl::CNet(1, 32));
+	Stack.Push(dl::CNet(32, 32));
+	Stack.Push(dl::CNet(32, 1));
 	dl::CNeuralNet NN(_Eta, Stack);
-	for (int i = 0; i < _TryNum; i++) {
-		NN.BatchLearn(DataSet);
-	}
+	float LastError = numeric_limits<float>::max();
+	NN.BatchLearn(DataSet, _Eps);
 
 	//プロットを標準出力に投げる
-	BOOST_FOREACH(const dl::PairType& i, DataSet){
+	BOOST_FOREACH(const dl::PairType& i, DataSet) {
+		VectorXf vo = NN.GetOutput(i.first);
 		cout << i.first(0) << " ";
-		cout << UniformSin(i.first(0)) << " ";
 		cout << i.second(0) << " ";
+		cout << vo(0) << " ";
 		cout << "\n";
 	}
 }
 
+/*!
+ */
 void nn_test() {
+	cerr << "start nn test" << endl;
 	//データセットを生成
 	vector<dl::PairType> DataSet;
 	dl::PairType Pair;
@@ -103,17 +116,21 @@ void nn_test() {
 	dl::CNeuralNet NN(_Eta, NetStack);
 
 	//データセットを元に学習を行う
-	for (int i = 0; i < _TryNum; i++) {
-		NN.BatchLearn(DataSet);
-	}
+	NN.BatchLearn(DataSet, _Eps);
 
 	// 結果を吐き出す
+	cerr << "test nn" << endl;
 	int Ok = 0;
 	int Bad = 0;
+	int Fuzzy=0;
 	BOOST_FOREACH(const dl::PairType& i, DataSet) {
 		VectorXf vo;
 		vo = NN.GetOutput(i.first);
-		cout << vo(0) << ", ";
+		cerr << vo(0) << ", ";
+		if( 1.0f*1.0f/3.0f<vo(0) && vo(0)<1.0f*2.0f/3.0f ){
+			Fuzzy++;
+			continue;
+		}
 		if (0.5f < vo(0) && 0.5f < i.second(0)) {
 			Ok++;
 		} else if (vo(0) < 0.5f && i.second(0) < 0.5f) {
@@ -122,15 +139,16 @@ void nn_test() {
 			Bad++;
 		}
 	}
-	cout << "ok : " << Ok << endl;
-	cout << "bad : " << Bad << endl;
+	cerr << "ok : " << Ok << endl;
+	cerr << "bad : " << Bad << endl;
+	cerr << "fuzzy : " << Fuzzy << endl;
 }
 
 void rbm_test() {
 }
 
 void dbn_test() {
-
+	boost::timer Timer;
 	cerr << "create data set" << endl;
 
 	//データセットを生成
@@ -162,28 +180,26 @@ void dbn_test() {
 	}
 
 	cerr << "create RBM" << endl;
-
+	cerr << "time : " << Timer.elapsed() << "[sec]" << endl;
 	//BRMのスタックを生成
 	dl::CNetStack NetStack;
 	for (int i = 0; i < _MidDepth; i++) {
-		cerr << ":" << i << endl;
+		cerr << "start : " << i << endl;
 		//学習するRBMを生成
 		dl::CRBM RBM(_ImgSize - i * _ReduceStep,
 				_ImgSize - (i + 1) * _ReduceStep);
 		//データセットを元に学習を行う
-		for (int j = 0; j < _TryNum; j++) {
-			RBM.Learn(InputSet);
-		}
+		RBM.Learn(InputSet, _Eps);
 		//学習済みRBMをスタックに積む
 		NetStack.Push(RBM.CreateNet());
 		//データセットを更新
 		BOOST_FOREACH(VectorXf& j, InputSet) {
 			j = RBM.GetHidden(j);
 		}
+		cerr << "end " << Timer.elapsed() << endl;
 	}
 
 	cerr << "create perceptron" << endl;
-
 	//出力層用データセット
 	vector<dl::PairType> OutDataSet;
 	OutDataSet.reserve(InputSet.size());
@@ -195,28 +211,34 @@ void dbn_test() {
 	dl::CNetStack OutStack;
 	OutStack.Push(dl::CNet(NetStack.OutSize(), 1));
 	dl::CNeuralNet OutNN(_Eta, OutStack);
-	for (int i = 0; i < _TryNum; i++) {
-		OutNN.BatchLearn(OutDataSet);
-	}
+	OutNN.BatchLearn(DataSet, _Eps);
 
 	//学習済みパーセプトロンをスタックに積む
 	NetStack.Push(OutNN.CreateNet());
+
+	cerr << "ok : " << Timer.elapsed() << "[sec]" << endl;
 
 	cerr << "fine tune" << endl;
 
 	//トータルで学習
 	dl::CNeuralNet TotalNN(_Eta, NetStack);
-	for (int i = 0; i < _TryNum; i++) {
-		TotalNN.BatchLearn(DataSet);
-	}
+	TotalNN.BatchLearn(DataSet, _Eps);
+
+	cerr << "ok : " << Timer.elapsed() << "[sec]" << endl;
 
 	//学習結果をテスト
 	// 結果を吐き出す
 	int Ok = 0;
 	int Bad = 0;
+	int Fuzzy=0;
 	BOOST_FOREACH(const dl::PairType& i, DataSet) {
 		VectorXf vo;
 		vo = TotalNN.GetOutput(i.first);
+		//cout << vo(0) << ", ";
+		if( 1.0f*1.0f/3.0f<vo(0) && vo(0)<1.0f*2.0f/3.0f ){
+			Fuzzy++;
+			continue;
+		}
 		if (0.5f < vo(0) && 0.5f < i.second(0)) {
 			Ok++;
 		} else if (vo(0) < 0.5f && i.second(0) < 0.5f) {
@@ -225,8 +247,9 @@ void dbn_test() {
 			Bad++;
 		}
 	}
-	cout << "ok : " << Ok << endl;
-	cout << "bad : " << Bad << endl;
+	cerr << "ok : " << Ok << endl;
+	cerr << "bad : " << Bad << endl;
+	cerr << "fuzzy : " << Fuzzy << endl;
 }
 
 struct TagNN {

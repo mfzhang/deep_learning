@@ -18,9 +18,14 @@ public:
 	 */
 	CRBM(size_t vs, size_t hs);
 
-	/*!
+	/*! データセットを元に学習を一回行う
 	 */
-	void Learn(const std::vector<Eigen::VectorXf>& data_set);
+	float Learn(const std::vector<Eigen::VectorXf>& data_set);
+
+	/*! データセットを元に学習を行う
+	 * 値が収束するまで学習を繰り返す
+	 */
+	void Learn(const std::vector<Eigen::VectorXf>& data_set, float eps, int min_loop_num=1e3);
 
 	/*!
 	 */
