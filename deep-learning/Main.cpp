@@ -5,6 +5,8 @@
 #include "MonoImage.hpp"
 #include "NetStack.hpp"
 
+#include "linux-wrapper/GNUPlotWrapper.hpp"
+
 using namespace std;
 using namespace Eigen;
 
@@ -19,8 +21,11 @@ boost::mt19937 _Gen(20130413);
 }
 
 inline float UniformSin(float x) {
-	return x * x + 0.1 * sin(10 * M_PI * x);
-	//return x * 0.5+0.5;
+	//return 0.25f*sin(M_PI*x)+0.5f;
+	//return 0.25*sin(4*M_PI*x)+0.5f;
+	return 0.5*((x* x) + 0.1 * sin(10 * M_PI * x))+0.25f;
+	//return 0.25f*x+0.5f;
+	//return x;
 }
 
 void nn_func_test();
@@ -29,7 +34,10 @@ void rbm_test();
 void dbn_test();
 
 int main() {
-	//nn_func_test();
+	//関数近似テスト
+	nn_func_test();
+	return 0;
+	//nn_test();
 	{
 		boost::timer Timer;
 		nn_test();
@@ -48,12 +56,12 @@ int main() {
 void nn_func_test() {
 	//データセットを生成
 	vector<dl::PairType> DataSet;
-	DataSet.reserve(1000);
+	DataSet.reserve(200);
 	dl::PairType Pair;
 	Pair.first = VectorXf(1);
 	Pair.second = VectorXf(1);
-	for (int i = 0; i < 1000; ++i) {
-		float x = static_cast<float>(i) / 1000.0f;
+	for (int i = 0; i < 200; ++i) {
+		float x = static_cast<float>(i) / 100.0f - 1.0f;
 		Pair.first(0) = x;
 		Pair.second(0) = UniformSin(x);
 		DataSet.push_back(Pair);
@@ -61,21 +69,27 @@ void nn_func_test() {
 
 	//ニューラルネットを生成
 	dl::CNetStack Stack;
-	Stack.Push(dl::CNet(1, 32));
-	Stack.Push(dl::CNet(32, 32));
-	Stack.Push(dl::CNet(32, 1));
+	Stack.Push(dl::CNet(1, 8));
+	//Stack.Push(dl::CNet(48, 48));
+	Stack.Push(dl::CNet(8, 1));
 	dl::CNeuralNet NN(_Eta, Stack);
 	float LastError = numeric_limits<float>::max();
-	NN.BatchLearn(DataSet, _Eps);
+	//NN.BatchLearn(DataSet, _Eps);
+	NN.BatchLearniRPROPminus(DataSet, 1e-4, 1e3);
+//	boost::uniform_int<> Dist(0, DataSet.size()-1);
+//	for(int i=0; i<1e7; ++i){
+//		NN.SeqLearn(DataSet[Dist(_Gen)]);
+//	}
 
 	//プロットを標準出力に投げる
+	utl::lnx::CPlotter Plotter;
 	BOOST_FOREACH(const dl::PairType& i, DataSet) {
 		VectorXf vo = NN.GetOutput(i.first);
-		cout << i.first(0) << " ";
-		cout << i.second(0) << " ";
-		cout << vo(0) << " ";
-		cout << "\n";
+		Plotter.Push("training", i.first(0), i.second(0));
+		Plotter.Push("learned", i.first(0), vo(0));
 	}
+
+	Plotter.Write("result.png");
 }
 
 /*!

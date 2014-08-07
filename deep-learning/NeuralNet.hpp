@@ -36,6 +36,11 @@ public:
 	 */
 	float BatchLearn(const std::vector<PairType>& data_set);
 
+	/*! データセットからバッチ学習を行う
+	 * iRPROP-で学習する
+	 */
+	void BatchLearniRPROPminus(const std::vector<PairType>& data_set, float eps, int convergence_count);
+
 	/*! 指定した誤差に収束するまで学習を行う
 	 */
 	void BatchLearn(const std::vector<PairType>& data_set, float eps, int min_loop_num=1e3);

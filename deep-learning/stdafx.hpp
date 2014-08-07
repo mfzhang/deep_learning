@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "linux-wrapper/stdafx.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <vector>
